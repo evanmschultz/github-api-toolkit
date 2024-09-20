@@ -1,0 +1,102 @@
+[
+  {
+    "Name": "awesome-go",
+    "Owner": {
+      "Login": "avelino"
+    },
+    "StargazerCount": 128979,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "go",
+    "Owner": {
+      "Login": "golang"
+    },
+    "StargazerCount": 122927,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "kubernetes",
+    "Owner": {
+      "Login": "kubernetes"
+    },
+    "StargazerCount": 109874,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "ollama",
+    "Owner": {
+      "Login": "ollama"
+    },
+    "StargazerCount": 89664,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "frp",
+    "Owner": {
+      "Login": "fatedier"
+    },
+    "StargazerCount": 84496,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "gin",
+    "Owner": {
+      "Login": "gin-gonic"
+    },
+    "StargazerCount": 77994,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "hugo",
+    "Owner": {
+      "Login": "gohugoio"
+    },
+    "StargazerCount": 74800,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "moby",
+    "Owner": {
+      "Login": "moby"
+    },
+    "StargazerCount": 68480,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "fzf",
+    "Owner": {
+      "Login": "junegunn"
+    },
+    "StargazerCount": 63908,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  },
+  {
+    "Name": "syncthing",
+    "Owner": {
+      "Login": "syncthing"
+    },
+    "StargazerCount": 63886,
+    "PrimaryLanguage": {
+      "Name": "Go"
+    }
+  }
+]

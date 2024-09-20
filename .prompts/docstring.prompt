@@ -1,0 +1,43 @@
+# Docstring Generator
+
+# This .prompt file generates high-quality docstrings for highlighted code
+# It adapts to the programming language and follows best practices
+# To use, highlight the code you want to document and run this prompt
+
+temperature: 0.1
+---
+Analyze the following code and generate a comprehensive docstring:
+
+{{{ selection }}}
+
+Follow these guidelines to create the docstring:
+
+1. Identify the programming language and use the appropriate docstring format (e.g., JSDoc for JavaScript, Google style for Python, JavaDoc for Java).
+2. Provide a concise yet informative description of the function, class, or module's purpose.
+3. List all parameters, including their types and descriptions.
+4. Describe the return value, including its type.
+5. Mention any exceptions or errors that may be raised.
+6. Include any important notes or warnings about usage.
+7. Add examples of usage if appropriate for complex functions.
+8. Ensure the docstring is comprehensive but not overly verbose.
+
+Your response should contain only the generated docstring, ready to be inserted into the code. Do not include any explanations or text outside the docstring format.
+
+Example output (adapt to the appropriate language and style):
+
+```
+/**
+ * Calculates the sum of two numbers.
+ *
+ * @param {number} a - The first number to add.
+ * @param {number} b - The second number to add.
+ * @returns {number} The sum of a and b.
+ * @throws {TypeError} If either parameter is not a number.
+ *
+ * @example
+ * const result = add(5, 3);
+ * console.log(result); // Output: 8
+ */
+```
+
+Adjust the docstring style and content to match the programming language and complexity of the provided code.

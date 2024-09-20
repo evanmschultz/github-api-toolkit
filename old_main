@@ -1,0 +1,271 @@
+// package main
+
+// import (
+// 	"context"
+// 	"encoding/base64"
+// 	"encoding/json"
+// 	"fmt"
+// 	"os"
+// 	"path/filepath"
+
+// 	"github.com/shurcooL/githubv4"
+// 	"golang.org/x/oauth2"
+// )
+
+// type GithubClient struct {
+// 	v4Client *githubv4.Client
+// }
+
+// type SchemaFetcher struct {
+// 	client *GithubClient
+// }
+
+// type RepoSearcher struct {
+// 	client *GithubClient
+// }
+
+// type ContentFetcher struct {
+// 	client *GithubClient
+// }
+
+// func NewGithubClient(token string) *GithubClient {
+// 	src := oauth2.StaticTokenSource(
+// 		&oauth2.Token{AccessToken: token},
+// 	)
+// 	httpClient := oauth2.NewClient(context.Background(), src)
+// 	v4Client := githubv4.NewClient(httpClient)
+// 	return &GithubClient{v4Client: v4Client}
+// }
+
+// func (gc *GithubClient) Query(ctx context.Context, q interface{}, variables map[string]interface{}) error {
+// 	return gc.v4Client.Query(ctx, q, variables)
+// }
+
+// func NewSchemaFetcher(client *GithubClient) *SchemaFetcher {
+// 	return &SchemaFetcher{client: client}
+// }
+
+// func (sf *SchemaFetcher) FetchSchema(ctx context.Context) (string, error) {
+// 	var query struct {
+// 		Schema struct {
+// 			Types []struct {
+// 				Name        string
+// 				Kind        string 
+// 				Description string
+// 				Fields      []struct {
+// 					Name string
+// 				}
+// 			}
+// 		} `graphql:"__schema"`
+// 	}
+
+// 	err := sf.client.Query(ctx, &query, nil)
+// 	if err != nil {
+// 		return "", fmt.Errorf("error querying GitHub API for schema: %w", err)
+// 	}
+
+// 	schemaJSON, err := json.MarshalIndent(query.Schema, "", "  ")
+// 	if err != nil {
+// 		return "", fmt.Errorf("error marshaling schema to JSON: %w", err)
+// 	}
+
+// 	return string(schemaJSON), nil
+// }
+
+// // 
+// func NewRepoSearcher(client *GithubClient) *RepoSearcher {
+// 	return &RepoSearcher{client: client}
+// }
+
+// func (rs *RepoSearcher) SearchTopRepos(ctx context.Context, language string, limit int) ([]Repository, error) {
+// 	var query struct {
+// 		Search struct {
+// 			Nodes []struct {
+// 				Repository Repository `graphql:"... on Repository"`
+// 			}
+// 		} `graphql:"search(query: $query, type: REPOSITORY, first: $limit)"`
+// 	}
+
+// 	variables := map[string]interface{}{
+// 		"query": githubv4.String(fmt.Sprintf("language:%s sort:stars-desc", language)),
+// 		"limit": githubv4.Int(limit),
+// 	}
+
+// 	err := rs.client.Query(ctx, &query, variables)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error querying GitHub API for top repos: %w", err)
+// 	}
+
+// 	repos := make([]Repository, 0, len(query.Search.Nodes))
+// 	for _, node := range query.Search.Nodes {
+// 		repos = append(repos, node.Repository)
+// 	}
+
+// 	return repos, nil
+// }
+
+// func NewContentFetcher(client *GithubClient) *ContentFetcher {
+// 	return &ContentFetcher{client: client}
+// }
+
+// func (cf *ContentFetcher) FetchRepositoryContents(ctx context.Context, owner, name, ref, outputDir string) error {
+//     // Create the output directory
+//     if err := os.MkdirAll(outputDir, 0755); err != nil {
+//         return fmt.Errorf("error creating output directory: %w", err)
+//     }
+
+//     var query struct {
+//         Repository struct {
+//             Object struct {
+//                 Tree struct {
+//                     Entries []TreeEntry
+//                 } `graphql:"... on Tree"`
+//             } `graphql:"object(expression: $ref)"`
+//         } `graphql:"repository(owner: $owner, name: $name)"`
+//     }
+
+//     variables := map[string]interface{}{
+//         "owner": githubv4.String(owner),
+//         "name":  githubv4.String(name),
+//         "ref":   githubv4.String(ref),
+//     }
+
+//     err := cf.client.Query(ctx, &query, variables)
+//     if err != nil {
+//         return fmt.Errorf("error querying GitHub API for repository contents: %w", err)
+//     }
+
+//     fmt.Printf("Received %d entries from GitHub API\n", len(query.Repository.Object.Tree.Entries))
+
+//     return cf.processEntries(query.Repository.Object.Tree.Entries, outputDir)
+// }
+
+// type TreeEntry struct {
+//     Name string
+//     Type string
+//     Oid  string
+//     Path string
+//     Object struct {
+//         Blob struct {
+//             Text     string
+//             IsTruncated bool
+//         } `graphql:"... on Blob"`
+//         Tree struct {
+//             Entries []TreeEntry
+//         } `graphql:"... on Tree"`
+//     }
+// }
+
+// func (cf *ContentFetcher) processEntries(entries []TreeEntry, outputDir string) error {
+//     for _, entry := range entries {
+//         fullPath := filepath.Join(outputDir, entry.Path)
+//         fmt.Printf("Processing entry: %s (Type: %s)\n", entry.Path, entry.Type)
+
+//         if entry.Type == "blob" {
+//             if err := cf.saveFile(entry, fullPath); err != nil {
+//                 return err
+//             }
+//         } else if entry.Type == "tree" {
+//             if err := os.MkdirAll(fullPath, 0755); err != nil {
+//                 return fmt.Errorf("error creating directory %s: %w", fullPath, err)
+//             }
+//             if err := cf.processEntries(entry.Object.Tree.Entries, outputDir); err != nil {
+//                 return err
+//             }
+//         }
+//     }
+//     return nil
+// }
+
+// func (cf *ContentFetcher) saveFile(entry TreeEntry, fullPath string) error {
+//     fmt.Printf("Saving file: %s\n", fullPath)
+
+//     if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+//         return fmt.Errorf("error creating directory for %s: %w", entry.Path, err)
+//     }
+
+//     decodedContent, err := base64.StdEncoding.DecodeString(entry.Object.Blob.Text)
+//     if err != nil {
+//         return fmt.Errorf("error decoding content for %s: %w", entry.Path, err)
+//     }
+
+//     fmt.Printf("Decoded content length: %d bytes\n", len(decodedContent))
+
+//     if err := os.WriteFile(fullPath, decodedContent, 0644); err != nil {
+//         return fmt.Errorf("error writing file %s: %w", entry.Path, err)
+//     }
+
+//     fmt.Printf("File saved successfully: %s\n", fullPath)
+//     return nil
+// }
+
+// type Repository struct {
+// 	Name            string
+// 	Owner           struct{ Login string }
+// 	StargazerCount  int
+// 	PrimaryLanguage struct{ Name string }
+// }
+
+// func saveToJSON(data interface{}, filename string) error {
+// 	jsonData, err := json.MarshalIndent(data, "", "  ")
+// 	if err != nil {
+// 		return fmt.Errorf("error marshaling to JSON: %w", err)
+// 	}
+
+// 	err = os.WriteFile(filename, jsonData, 0644)
+// 	if err != nil {
+// 		return fmt.Errorf("error writing to file: %w", err)
+// 	}
+
+// 	fmt.Printf("Data saved to %s\n", filename)
+// 	return nil
+// }
+
+// func main() {
+// 	token := os.Getenv("GITHUB_TOKEN")
+// 	if token == "" {
+// 		fmt.Println("GITHUB_TOKEN environment variable is not set")
+// 		os.Exit(1)
+// 	}
+
+// 	client := NewGithubClient(token)
+// 	schemaFetcher := NewSchemaFetcher(client)
+// 	repoSearcher := NewRepoSearcher(client)
+// 	contentFetcher := NewContentFetcher(client)
+
+// 	ctx := context.Background()
+
+// 	// Fetch and save schema
+// 	schema, err := schemaFetcher.FetchSchema(ctx)
+// 	if err != nil {
+// 		fmt.Printf("Error fetching schema: %v\n", err)
+// 		os.Exit(1)
+// 	}
+// 	if err := saveToJSON(schema, "github_schema.json"); err != nil {
+// 		fmt.Printf("Error saving schema: %v\n", err)
+// 		os.Exit(1)
+// 	}
+
+// 	// Search top repositories
+// 	repos, err := repoSearcher.SearchTopRepos(ctx, "go", 10)
+// 	if err != nil {
+// 		fmt.Printf("Error searching top repositories: %v\n", err)
+// 		os.Exit(1)
+// 	}
+// 	if err := saveToJSON(repos, "top_go_repos.json"); err != nil {
+// 		fmt.Printf("Error saving top repositories: %v\n", err)
+// 		os.Exit(1)
+// 	}
+
+// 	// Fetch repository contents
+// 	owner := "evanmschultz"
+// 	repo := "gredis"
+// 	ref := "main"
+// 	outputDir := "./output"
+// 	err = contentFetcher.FetchRepositoryContents(ctx, owner, repo, ref, outputDir)
+// 	if err != nil {
+// 		fmt.Printf("Error fetching repository contents: %v\n", err)
+// 		os.Exit(1)
+// 	}
+// 	fmt.Printf("Repository contents fetched successfully to %s\n", outputDir)
+// }
